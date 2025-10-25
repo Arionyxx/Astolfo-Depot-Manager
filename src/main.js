@@ -102,14 +102,33 @@ ipcMain.handle('steamdb:getAppInfo', async (event, appId) => {
   try {
     return await steamdbScraper.getAppInfo(appId);
   } catch (error) {
+    if (error.message === 'CLOUDFLARE_BLOCK') {
+      return { success: false, error: error.message, needsCaptcha: true };
+    }
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle('steamdb:solveCaptcha', async (event, url) => {
+  try {
+    return await steamdbScraper.solveCloudflareCaptcha(url);
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('steamdb:clearSession', async () => {
+  steamdbScraper.clearSession();
+  return { success: true };
 });
 
 ipcMain.handle('steamdb:getDepots', async (event, appId) => {
   try {
     return await steamdbScraper.getDepots(appId);
   } catch (error) {
+    if (error.message === 'CLOUDFLARE_BLOCK') {
+      return { success: false, error: error.message, needsCaptcha: true };
+    }
     return { success: false, error: error.message };
   }
 });

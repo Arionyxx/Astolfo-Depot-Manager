@@ -236,6 +236,13 @@ async function searchSteamDB() {
     
     // Load app info
     const appInfo = await window.api.steamdb.getAppInfo(appId);
+    
+    // Check if Cloudflare challenge is needed
+    if (appInfo.needsCaptcha) {
+        showCloudflareChallengePrompt(appId);
+        return;
+    }
+    
     if (appInfo.success) {
         displayAppInfo(appInfo.data);
         if (appInfo.data.fallback) {
@@ -271,34 +278,101 @@ async function searchSteamDB() {
     document.getElementById('appInfoSection').classList.remove('hidden');
 }
 
+async function showCloudflareChallengePrompt(appId) {
+    const content = document.getElementById('appInfoContent');
+    const appInfoSection = document.getElementById('appInfoSection');
+    
+    appInfoSection.classList.remove('hidden');
+    document.getElementById('appName').textContent = 'Cloudflare Challenge Required';
+    
+    content.innerHTML = `
+        <div class="col-span-2">
+            <div class="card bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <div class="card-body">
+                    <h2 class="card-title text-2xl">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        Cloudflare Protection Detected
+                    </h2>
+                    <p class="text-lg mt-2">SteamDB uses Cloudflare to protect against bots. Let's solve the challenge!</p>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="space-y-4">
+                        <div class="alert bg-white/20">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <h3 class="font-bold">What will happen:</h3>
+                                <ol class="text-sm list-decimal ml-6 mt-2">
+                                    <li>A browser window will open with SteamDB</li>
+                                    <li>Complete the Cloudflare challenge if shown (click checkbox)</li>
+                                    <li>Window closes automatically when done</li>
+                                    <li>Then you can browse SteamDB normally!</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-lg btn-success w-full" onclick="solveCloudflareCaptcha(${appId})">
+                            <i class="fas fa-unlock mr-2"></i>
+                            Open Browser & Solve Challenge
+                        </button>
+                        
+                        <p class="text-sm text-center opacity-80">
+                            <i class="fas fa-lock"></i>
+                            This is safe and normal - just Cloudflare's security check
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function solveCloudflareCaptcha(appId) {
+    showToast('Opening browser window... Please solve the Cloudflare challenge.', 'info');
+    
+    try {
+        const result = await window.api.steamdb.solveCaptcha('https://steamdb.info/app/' + appId);
+        
+        if (result.success) {
+            showToast('✅ Challenge solved! Now loading data...', 'success');
+            // Retry the search now that we have a valid session
+            setTimeout(() => searchSteamDB(), 1000);
+        } else {
+            showToast('Failed to solve challenge: ' + result.error, 'error');
+            showCloudflareChallengePrompt(appId);
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
 function showTroubleshootingHelp() {
     const helpText = `
 === TROUBLESHOOTING: SteamDB Unavailable ===
 
 Don't worry! You can still download depots:
 
-1. MANUAL ENTRY (Easiest):
+1. SOLVE CLOUDFLARE (NEW!):
+   - Click the "Solve Challenge" button
+   - Complete Cloudflare check in the browser
+   - Automatically continue!
+
+2. MANUAL ENTRY:
    - Go to "Depot Downloader" tab
    - Find App ID and Depot ID from browser
    - Enter them manually
    - Click "Start Download"
 
-2. BROWSER METHOD:
+3. BROWSER METHOD:
    - Open: https://steamdb.info in your browser
    - Search for your game
    - Copy the Depot IDs you need
    - Use them in Depot Downloader tab
 
-3. WAIT AND RETRY:
-   - SteamDB block is usually temporary
-   - Wait 5-10 minutes
-   - Restart the app
-   - Try again
-
 WHY THIS HAPPENS:
 SteamDB uses Cloudflare protection that can block
-automated requests. The app now uses Steam Store API
-as a fallback, so you still get basic info!
+automated requests. The app now lets you solve
+the challenge directly!
 
 Full guide: Check TROUBLESHOOTING.md in the app folder
     `;

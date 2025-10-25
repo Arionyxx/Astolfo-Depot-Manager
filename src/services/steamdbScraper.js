@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const SteamAPI = require('./steamAPI');
+const BrowserSession = require('./browserSession');
 
 class SteamDBScraper {
   constructor() {
@@ -13,6 +14,7 @@ class SteamDBScraper {
     this.requestTimestamps = [];
     this.steamAPI = new SteamAPI();
     this.useFallback = false; // Use Steam API fallback if SteamDB fails
+    this.browserSession = new BrowserSession();
     
     this.axiosInstance = axios.create({
       headers: {
@@ -66,20 +68,40 @@ class SteamDBScraper {
     const randomDelay = Math.floor(Math.random() * 1000) + 500; // 500-1500ms
     await new Promise(resolve => setTimeout(resolve, randomDelay));
     
+    // Use browser session cookies if available
+    if (this.browserSession.hasValidSession()) {
+      const sessionConfig = this.browserSession.getAxiosConfig();
+      options.headers = { ...options.headers, ...sessionConfig.headers };
+    }
+    
     try {
       const response = await this.axiosInstance.get(url, options);
       return response;
     } catch (error) {
       if (error.response) {
         if (error.response.status === 403) {
-          this.useFallback = true; // Enable fallback for future requests
-          throw new Error('SteamDB blocked the request. Using Steam API fallback instead.');
+          // Cloudflare blocked - offer to solve it
+          throw new Error('CLOUDFLARE_BLOCK');
         } else if (error.response.status === 429) {
           throw new Error('Rate limit exceeded. Please wait 60 seconds before trying again.');
         }
       }
       throw error;
     }
+  }
+
+  async solveCloudflareCaptcha(url) {
+    try {
+      const result = await this.browserSession.openSteamDBWindow(url);
+      return result;
+    } catch (error) {
+      console.error('Failed to solve Cloudflare:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  clearSession() {
+    this.browserSession.clearSession();
   }
 
   async getAppInfo(appId) {
