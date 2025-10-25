@@ -262,11 +262,19 @@ async function searchSteamDB() {
     
     // Load depots
     const depots = await window.api.steamdb.getDepots(appId);
+    
+    // Check if depots also need Cloudflare challenge
+    if (depots.needsCaptcha) {
+        // Show challenge prompt if depots are blocked too
+        showCloudflareChallengePrompt(appId);
+        return;
+    }
+    
     if (depots.success) {
         displayDepots(depots.data);
     } else {
         showToast('Depots unavailable: ' + depots.error, 'warning');
-        displayDepotsError(appId, depots.error, depots.fallbackInstructions);
+        displayDepotsErrorWithSolver(appId, depots.error, depots.fallbackInstructions);
     }
     
     // Load patch notes
@@ -336,6 +344,7 @@ async function solveCloudflareCaptcha(appId) {
         if (result.success) {
             showToast('✅ Challenge solved! Now loading data...', 'success');
             // Retry the search now that we have a valid session
+            document.getElementById('steamdbAppId').value = appId;
             setTimeout(() => searchSteamDB(), 1000);
         } else {
             showToast('Failed to solve challenge: ' + result.error, 'error');
@@ -344,6 +353,16 @@ async function solveCloudflareCaptcha(appId) {
     } catch (error) {
         showToast('Error: ' + error.message, 'error');
     }
+}
+
+// Quick solver from alert banner
+async function solveCloudflareCaptchaQuick() {
+    const appId = document.getElementById('steamdbAppId').value || currentAppId;
+    if (!appId) {
+        showToast('Please enter an App ID first', 'error');
+        return;
+    }
+    await solveCloudflareCaptcha(appId);
 }
 
 function showTroubleshootingHelp() {
@@ -410,6 +429,52 @@ function displayDepotsError(appId, errorMsg, instructions) {
                 <p class="text-sm">${errorMsg}</p>
                 ${instructions ? `<p class="text-sm mt-2"><a href="${instructions.replace('Find depot IDs at: ', '')}" target="_blank" class="link">Open SteamDB in browser →</a></p>` : ''}
                 <p class="text-sm mt-2">You can still use the <strong>Depot Downloader</strong> tab by entering App ID and Depot ID manually.</p>
+            </div>
+        </div>
+    `;
+}
+
+function displayDepotsErrorWithSolver(appId, errorMsg, instructions) {
+    const listEl = document.getElementById('depotsList');
+    listEl.innerHTML = `
+        <div class="card bg-gradient-to-r from-orange-500 to-red-500 text-white">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Cloudflare Blocked Depot List
+                </h3>
+                <p class="text-sm">${errorMsg}</p>
+                
+                <div class="divider"></div>
+                
+                <div class="space-y-3">
+                    <div class="alert bg-white/20">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <p class="text-sm font-bold">Solution: Solve Cloudflare Challenge!</p>
+                            <p class="text-xs mt-1">Click below to open browser, complete the challenge, then see all depots!</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success btn-lg w-full" onclick="solveCloudflareCaptcha(${appId})">
+                        <i class="fas fa-unlock mr-2"></i>
+                        Solve Challenge & Load Depots
+                    </button>
+                    
+                    <details class="collapse collapse-arrow bg-white/10">
+                        <summary class="collapse-title text-sm font-medium">
+                            Or use manual entry instead
+                        </summary>
+                        <div class="collapse-content text-sm">
+                            <ol class="list-decimal ml-4 space-y-1">
+                                <li>Open <a href="https://steamdb.info/app/${appId}/depots/" target="_blank" class="link underline">SteamDB</a> in your browser</li>
+                                <li>Complete Cloudflare challenge there</li>
+                                <li>Find the Depot ID you want</li>
+                                <li>Use "Depot Downloader" tab to enter it manually</li>
+                            </ol>
+                        </div>
+                    </details>
+                </div>
             </div>
         </div>
     `;
