@@ -11,7 +11,7 @@
 
 A modern, feature-rich alternative to DepotDownloader GUI with real-time SteamDB data integration, beautiful UI powered by daisyUI, and comprehensive Steam authentication support.
 
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Screenshots](#screenshots) • [Development](#development)
+[Features](#features) • [Installation](#installation) • [Quick Update](#-updating-easy-way) • [Usage](#usage) • [Documentation](#-documentation)
 
 </div>
 
@@ -68,11 +68,11 @@ A modern, feature-rich alternative to DepotDownloader GUI with real-time SteamDB
 
 ## 🚀 Installation
 
-### From Source
+### Quick Start (First Time)
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/Astolfo-Depot-Manager.git
+git clone https://github.com/Arionyxx/Astolfo-Depot-Manager.git
 cd Astolfo-Depot-Manager
 ```
 
@@ -85,6 +85,26 @@ npm install
 ```bash
 npm start
 ```
+
+### 🔄 Updating (Easy Way)
+
+**Don't redownload everything!** Just update the changes:
+
+**Windows:** Double-click `update.bat`
+
+**Mac/Linux:** Double-click `update.sh` (make executable first)
+
+**Or use command:**
+```bash
+cd Astolfo-Depot-Manager
+git pull origin main
+npm install
+npm start
+```
+
+📖 See [UPDATE_GUIDE.md](UPDATE_GUIDE.md) for detailed update instructions
+
+📚 See [QUICK_START.md](QUICK_START.md) for complete beginner's guide
 
 ### Development Mode
 
@@ -297,12 +317,22 @@ This tool is for educational and backup purposes only. Users are responsible for
 
 ---
 
+## 📚 Documentation
+
+- **[QUICK_START.md](QUICK_START.md)** - Complete beginner's guide
+- **[UPDATE_GUIDE.md](UPDATE_GUIDE.md)** - How to update without redownloading
+- **[FIXES.md](FIXES.md)** - Recent bug fixes and improvements
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute
+
 ## 📞 Support
 
 If you encounter any issues or have questions:
+- Check [QUICK_START.md](QUICK_START.md) for setup help
+- Check [UPDATE_GUIDE.md](UPDATE_GUIDE.md) for update issues
+- Check [FIXES.md](FIXES.md) for known issues and solutions
 - Open an issue on GitHub
 - Check existing issues for solutions
-- Read the documentation carefully
 
 ---
 
