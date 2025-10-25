@@ -240,9 +240,13 @@ async function searchSteamDB() {
         displayAppInfo(appInfo.data);
         if (appInfo.data.fallback) {
             showToast('Using Steam Store data (SteamDB temporarily unavailable)', 'warning');
+            document.getElementById('steamdbStatusAlert').classList.remove('hidden');
+        } else {
+            document.getElementById('steamdbStatusAlert').classList.add('hidden');
         }
     } else {
         showToast('Failed to load app info: ' + appInfo.error, 'error');
+        document.getElementById('steamdbStatusAlert').classList.remove('hidden');
         // Still allow manual depot entry
         document.getElementById('appInfoSection').classList.remove('hidden');
         displayFallbackInfo(appId, appInfo.error);
@@ -265,6 +269,41 @@ async function searchSteamDB() {
     }
     
     document.getElementById('appInfoSection').classList.remove('hidden');
+}
+
+function showTroubleshootingHelp() {
+    const helpText = `
+=== TROUBLESHOOTING: SteamDB Unavailable ===
+
+Don't worry! You can still download depots:
+
+1. MANUAL ENTRY (Easiest):
+   - Go to "Depot Downloader" tab
+   - Find App ID and Depot ID from browser
+   - Enter them manually
+   - Click "Start Download"
+
+2. BROWSER METHOD:
+   - Open: https://steamdb.info in your browser
+   - Search for your game
+   - Copy the Depot IDs you need
+   - Use them in Depot Downloader tab
+
+3. WAIT AND RETRY:
+   - SteamDB block is usually temporary
+   - Wait 5-10 minutes
+   - Restart the app
+   - Try again
+
+WHY THIS HAPPENS:
+SteamDB uses Cloudflare protection that can block
+automated requests. The app now uses Steam Store API
+as a fallback, so you still get basic info!
+
+Full guide: Check TROUBLESHOOTING.md in the app folder
+    `;
+    
+    alert(helpText);
 }
 
 function displayFallbackInfo(appId, errorMsg) {

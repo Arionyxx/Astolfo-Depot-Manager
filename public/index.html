@@ -237,11 +237,22 @@
                     
                     <div class="card bg-base-300 shadow-xl mb-6">
                         <div class="card-body">
+                            <div id="steamdbStatusAlert" class="alert alert-warning mb-4 hidden">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <span class="font-bold">SteamDB Unavailable</span>
+                                    <p class="text-sm">Using Steam Store API fallback. Some features limited. <a href="#" onclick="showTroubleshootingHelp(); return false;" class="link">Need help?</a></p>
+                                </div>
+                            </div>
                             <div class="flex gap-4">
                                 <input type="number" id="steamdbAppId" placeholder="Enter App ID (e.g., 730)" class="input input-bordered flex-1" />
                                 <button class="btn btn-primary" onclick="searchSteamDB()">
                                     <i class="fas fa-search mr-2"></i>Search
                                 </button>
+                            </div>
+                            <div class="text-sm opacity-70 mt-2">
+                                <i class="fas fa-info-circle"></i>
+                                Popular: CS:GO (730), TF2 (440), Dota 2 (570), Rust (252490)
                             </div>
                         </div>
                     </div>
