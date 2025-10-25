@@ -321,6 +321,7 @@ This tool is for educational and backup purposes only. Users are responsible for
 
 - **[QUICK_START.md](QUICK_START.md)** - Complete beginner's guide
 - **[UPDATE_GUIDE.md](UPDATE_GUIDE.md)** - How to update without redownloading
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Fix 403 errors and common issues
 - **[FIXES.md](FIXES.md)** - Recent bug fixes and improvements
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute
@@ -328,6 +329,7 @@ This tool is for educational and backup purposes only. Users are responsible for
 ## 📞 Support
 
 If you encounter any issues or have questions:
+- **🔥 Getting 403 errors?** Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - Check [QUICK_START.md](QUICK_START.md) for setup help
 - Check [UPDATE_GUIDE.md](UPDATE_GUIDE.md) for update issues
 - Check [FIXES.md](FIXES.md) for known issues and solutions
