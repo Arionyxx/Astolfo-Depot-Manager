@@ -1,0 +1,60 @@
+{
+  "name": "astolfo-depot-manager",
+  "version": "1.0.0",
+  "description": "Advanced Steam Depot Downloader with SteamDB integration and modern UI",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "steam",
+    "depot",
+    "downloader",
+    "steamdb",
+    "electron"
+  ],
+  "author": "arifemboy",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
+    "electron-store": "^8.1.0",
+    "steam-user": "^5.0.7",
+    "steamcommunity": "^3.47.0"
+  },
+  "devDependencies": {
+    "electron": "^27.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.astolfo.depotmanager",
+    "productName": "Astolfo Depot Manager",
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/icon.png",
+      "category": "Utility"
+    }
+  }
+}

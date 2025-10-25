@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astolfo Depot Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+        .manifest-item:hover {
+            background-color: rgba(103, 126, 234, 0.1);
+        }
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .toast-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navbar -->
+        <div class="navbar bg-base-300 shadow-lg">
+            <div class="flex-1">
+                <a class="btn btn-ghost text-xl">
+                    <i class="fas fa-download gradient-bg bg-clip-text text-transparent"></i>
+                    <span class="ml-2 gradient-bg bg-clip-text text-transparent font-bold">Astolfo Depot Manager</span>
+                </a>
+            </div>
+            <div class="flex-none gap-2">
+                <div class="dropdown dropdown-end">
+                    <div id="steamStatus" class="btn btn-ghost btn-circle">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-200 rounded-box w-52">
+                        <li><a onclick="showLoginModal()"><i class="fas fa-sign-in-alt mr-2"></i>Login</a></li>
+                        <li><a onclick="logout()"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar -->
+            <div class="sidebar w-64 bg-base-300 shadow-xl">
+                <ul class="menu p-4 w-full">
+                    <li><a onclick="showPage('dashboard')" class="menu-item active" data-page="dashboard">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a></li>
+                    <li><a onclick="showPage('downloader')" class="menu-item" data-page="downloader">
+                        <i class="fas fa-download mr-2"></i>Depot Downloader
+                    </a></li>
+                    <li><a onclick="showPage('steamdb')" class="menu-item" data-page="steamdb">
+                        <i class="fas fa-database mr-2"></i>SteamDB Browser
+                    </a></li>
+                    <li><a onclick="showPage('history')" class="menu-item" data-page="history">
+                        <i class="fas fa-history mr-2"></i>Download History
+                    </a></li>
+                    <li><a onclick="showPage('settings')" class="menu-item" data-page="settings">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a></li>
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content-area flex-1 p-6 bg-base-100">
+                <!-- Dashboard Page -->
+                <div id="dashboard" class="page-content">
+                    <h1 class="text-4xl font-bold mb-6">Dashboard</h1>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="stats shadow card-hover">
+                            <div class="stat">
+                                <div class="stat-figure text-primary">
+                                    <i class="fas fa-download text-3xl"></i>
+                                </div>
+                                <div class="stat-title">Total Downloads</div>
+                                <div class="stat-value text-primary" id="totalDownloads">0</div>
+                                <div class="stat-desc">All time</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats shadow card-hover">
+                            <div class="stat">
+                                <div class="stat-figure text-secondary">
+                                    <i class="fas fa-clock text-3xl"></i>
+                                </div>
+                                <div class="stat-title">Active Downloads</div>
+                                <div class="stat-value text-secondary" id="activeDownloads">0</div>
+                                <div class="stat-desc">Currently running</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats shadow card-hover">
+                            <div class="stat">
+                                <div class="stat-figure text-accent">
+                                    <i class="fas fa-database text-3xl"></i>
+                                </div>
+                                <div class="stat-title">Storage Used</div>
+                                <div class="stat-value text-accent" id="storageUsed">0 GB</div>
+                                <div class="stat-desc">Total downloaded</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-300 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Quick Start Guide</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="badge badge-primary badge-lg">1</div>
+                                    <div>
+                                        <h3 class="font-bold">Login to Steam</h3>
+                                        <p class="text-sm opacity-70">Click the user icon in the top right to login with your Steam credentials</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="badge badge-secondary badge-lg">2</div>
+                                    <div>
+                                        <h3 class="font-bold">Browse SteamDB</h3>
+                                        <p class="text-sm opacity-70">Find the game and depot information you want to download</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="badge badge-accent badge-lg">3</div>
+                                    <div>
+                                        <h3 class="font-bold">Download Depots</h3>
+                                        <p class="text-sm opacity-70">Configure your download settings and start downloading</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Depot Downloader Page -->
+                <div id="downloader" class="page-content hidden">
+                    <h1 class="text-4xl font-bold mb-6">Depot Downloader</h1>
+                    
+                    <div class="card bg-base-300 shadow-xl mb-6">
+                        <div class="card-body">
+                            <h2 class="card-title">Download Configuration</h2>
+                            
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">App ID</span>
+                                </label>
+                                <input type="number" id="downloadAppId" placeholder="e.g., 730 (CS:GO)" class="input input-bordered w-full" />
+                            </div>
+
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">Depot ID</span>
+                                </label>
+                                <input type="number" id="downloadDepotId" placeholder="e.g., 731" class="input input-bordered w-full" />
+                            </div>
+
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">Manifest ID (Optional)</span>
+                                </label>
+                                <input type="text" id="downloadManifestId" placeholder="Leave empty for latest" class="input input-bordered w-full" />
+                            </div>
+
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">Download Directory</span>
+                                </label>
+                                <input type="text" id="downloadDir" placeholder="C:\Downloads\Depots" class="input input-bordered w-full" />
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-4">
+                                    <input type="checkbox" id="verifyFiles" class="checkbox checkbox-primary" />
+                                    <span class="label-text">Verify downloaded files</span>
+                                </label>
+                            </div>
+
+                            <div class="card-actions justify-end mt-4">
+                                <button class="btn btn-primary" onclick="startDownload()">
+                                    <i class="fas fa-download mr-2"></i>Start Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Downloads -->
+                    <div class="card bg-base-300 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Active Downloads</h2>
+                            <div id="activeDownloadsList" class="space-y-4">
+                                <p class="text-center text-gray-500 py-8">No active downloads</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SteamDB Browser Page -->
+                <div id="steamdb" class="page-content hidden">
+                    <h1 class="text-4xl font-bold mb-6">SteamDB Browser</h1>
+                    
+                    <div class="card bg-base-300 shadow-xl mb-6">
+                        <div class="card-body">
+                            <div class="flex gap-4">
+                                <input type="number" id="steamdbAppId" placeholder="Enter App ID (e.g., 730)" class="input input-bordered flex-1" />
+                                <button class="btn btn-primary" onclick="searchSteamDB()">
+                                    <i class="fas fa-search mr-2"></i>Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Info -->
+                    <div id="appInfoSection" class="hidden">
+                        <div class="card bg-base-300 shadow-xl mb-6">
+                            <div class="card-body">
+                                <h2 class="card-title" id="appName">App Information</h2>
+                                <div id="appInfoContent" class="grid grid-cols-2 gap-4">
+                                    <!-- Filled by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Depots List -->
+                        <div class="card bg-base-300 shadow-xl mb-6">
+                            <div class="card-body">
+                                <h2 class="card-title">Depots</h2>
+                                <div id="depotsList" class="overflow-x-auto">
+                                    <!-- Filled by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manifest History -->
+                        <div class="card bg-base-300 shadow-xl mb-6">
+                            <div class="card-body">
+                                <h2 class="card-title">Manifest History</h2>
+                                <div class="form-control w-full max-w-xs mb-4">
+                                    <select id="depotSelect" class="select select-bordered" onchange="loadManifestHistory()">
+                                        <option disabled selected>Select a depot</option>
+                                    </select>
+                                </div>
+                                <div id="manifestHistory" class="overflow-x-auto max-h-96">
+                                    <!-- Filled by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patch Notes -->
+                        <div class="card bg-base-300 shadow-xl">
+                            <div class="card-body">
+                                <h2 class="card-title">Patch Notes</h2>
+                                <div id="patchNotes" class="space-y-4">
+                                    <!-- Filled by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Page -->
+                <div id="history" class="page-content hidden">
+                    <h1 class="text-4xl font-bold mb-6">Download History</h1>
+                    
+                    <div class="card bg-base-300 shadow-xl">
+                        <div class="card-body">
+                            <div id="historyList" class="overflow-x-auto">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div id="settings" class="page-content hidden">
+                    <h1 class="text-4xl font-bold mb-6">Settings</h1>
+                    
+                    <div class="card bg-base-300 shadow-xl mb-6">
+                        <div class="card-body">
+                            <h2 class="card-title">Download Settings</h2>
+                            
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">Default Download Directory</span>
+                                </label>
+                                <input type="text" id="settingsDownloadDir" class="input input-bordered w-full" />
+                            </div>
+
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">Max Concurrent Downloads</span>
+                                </label>
+                                <input type="number" id="settingsMaxDownloads" min="1" max="10" class="input input-bordered w-full" />
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-4">
+                                    <input type="checkbox" id="settingsAutoVerify" class="checkbox checkbox-primary" />
+                                    <span class="label-text">Auto-verify downloads</span>
+                                </label>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-4">
+                                    <input type="checkbox" id="settingsRememberLogin" class="checkbox checkbox-primary" />
+                                    <span class="label-text">Remember login credentials</span>
+                                </label>
+                            </div>
+
+                            <div class="card-actions justify-end mt-4">
+                                <button class="btn btn-primary" onclick="saveSettings()">
+                                    <i class="fas fa-save mr-2"></i>Save Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-300 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">About</h2>
+                            <p>Astolfo Depot Manager v1.0.0</p>
+                            <p class="text-sm opacity-70">Advanced Steam Depot Downloader with SteamDB integration</p>
+                            <p class="text-sm opacity-70">Created by arifemboy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Steam Login Modal -->
+    <dialog id="loginModal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Steam Login</h3>
+            
+            <div class="form-control w-full mb-4">
+                <label class="label">
+                    <span class="label-text">Username</span>
+                </label>
+                <input type="text" id="loginUsername" placeholder="Steam username" class="input input-bordered w-full" />
+            </div>
+
+            <div class="form-control w-full mb-4">
+                <label class="label">
+                    <span class="label-text">Password</span>
+                </label>
+                <input type="password" id="loginPassword" placeholder="Steam password" class="input input-bordered w-full" />
+            </div>
+
+            <div id="guardCodeSection" class="form-control w-full mb-4 hidden">
+                <label class="label">
+                    <span class="label-text">Steam Guard Code</span>
+                </label>
+                <input type="text" id="guardCode" placeholder="Enter Steam Guard code" class="input input-bordered w-full" />
+                <button class="btn btn-sm btn-primary mt-2" onclick="submitGuardCode()">Submit Code</button>
+            </div>
+
+            <div class="modal-action">
+                <form method="dialog">
+                    <button class="btn">Cancel</button>
+                </form>
+                <button class="btn btn-primary" onclick="login()">Login</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-custom"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
