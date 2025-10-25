@@ -277,10 +277,18 @@ async function searchSteamDB() {
         displayDepotsErrorWithSolver(appId, depots.error, depots.fallbackInstructions);
     }
     
-    // Load patch notes
-    const patchNotes = await window.api.steamdb.getPatchNotes(appId);
-    if (patchNotes.success) {
-        displayPatchNotes(patchNotes.data);
+    // Load patch notes (don't block on this)
+    try {
+        const patchNotes = await window.api.steamdb.getPatchNotes(appId);
+        if (patchNotes.success) {
+            displayPatchNotes(patchNotes.data);
+        } else if (!patchNotes.needsCaptcha) {
+            // Only show error if it's not a Cloudflare issue (already shown)
+            displayPatchNotes([]);
+        }
+    } catch (error) {
+        console.log('Patch notes unavailable:', error);
+        displayPatchNotes([]);
     }
     
     document.getElementById('appInfoSection').classList.remove('hidden');

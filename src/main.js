@@ -137,6 +137,9 @@ ipcMain.handle('steamdb:getManifestHistory', async (event, appId, depotId) => {
   try {
     return await steamdbScraper.getManifestHistory(appId, depotId);
   } catch (error) {
+    if (error.message === 'CLOUDFLARE_BLOCK') {
+      return { success: false, error: error.message, needsCaptcha: true };
+    }
     return { success: false, error: error.message };
   }
 });
@@ -145,6 +148,9 @@ ipcMain.handle('steamdb:getPatchNotes', async (event, appId) => {
   try {
     return await steamdbScraper.getPatchNotes(appId);
   } catch (error) {
+    if (error.message === 'CLOUDFLARE_BLOCK') {
+      return { success: false, error: error.message, needsCaptcha: true };
+    }
     return { success: false, error: error.message };
   }
 });

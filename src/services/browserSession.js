@@ -33,7 +33,9 @@ class BrowserSession {
           banner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: #667eea; color: white; padding: 15px; text-align: center; z-index: 99999; font-family: Arial;';
           banner.innerHTML = '<strong>Complete the Cloudflare challenge if shown, then this window will close automatically.</strong><br>Browse SteamDB normally - the app will capture your session.';
           document.body.insertBefore(banner, document.body.firstChild);
-        `);
+        `).catch(err => {
+          console.log('Could not inject banner (page may not be ready yet):', err.message);
+        });
       });
 
       // Monitor for successful load (passed Cloudflare)
@@ -66,7 +68,9 @@ class BrowserSession {
                   banner.style.background = '#48bb78';
                   banner.innerHTML = '<strong>✅ Success! Session captured. This window will close in 2 seconds...</strong>';
                 }
-              `);
+              `).catch(err => {
+                console.log('Could not update banner:', err.message);
+              });
               
               setTimeout(() => {
                 if (this.sessionWindow) {
