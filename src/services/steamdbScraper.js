@@ -4,17 +4,80 @@ const cheerio = require('cheerio');
 class SteamDBScraper {
   constructor() {
     this.baseUrl = 'https://steamdb.info';
+    this.requestQueue = [];
+    this.isProcessing = false;
+    this.lastRequestTime = 0;
+    this.minRequestInterval = 2000; // 2 seconds between requests
+    this.requestsPerMinute = 20;
+    this.requestTimestamps = [];
+    
     this.axiosInstance = axios.create({
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Cache-Control': 'max-age=0'
+      },
+      timeout: 15000
     });
+  }
+
+  async throttleRequest() {
+    const now = Date.now();
+    
+    // Remove timestamps older than 1 minute
+    this.requestTimestamps = this.requestTimestamps.filter(ts => now - ts < 60000);
+    
+    // Check if we've exceeded requests per minute
+    if (this.requestTimestamps.length >= this.requestsPerMinute) {
+      const oldestRequest = this.requestTimestamps[0];
+      const waitTime = 60000 - (now - oldestRequest);
+      if (waitTime > 0) {
+        console.log(`Rate limit: waiting ${waitTime}ms`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+    
+    // Ensure minimum interval between requests
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const waitTime = this.minRequestInterval - timeSinceLastRequest;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    this.lastRequestTime = Date.now();
+    this.requestTimestamps.push(this.lastRequestTime);
+  }
+
+  async makeRequest(url, options = {}) {
+    await this.throttleRequest();
+    
+    try {
+      const response = await this.axiosInstance.get(url, options);
+      return response;
+    } catch (error) {
+      if (error.response) {
+        if (error.response.status === 403) {
+          throw new Error('Access denied by SteamDB. Please wait a few minutes before trying again.');
+        } else if (error.response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait before making more requests.');
+        }
+      }
+      throw error;
+    }
   }
 
   async getAppInfo(appId) {
     try {
       const url = `${this.baseUrl}/app/${appId}/`;
-      const response = await this.axiosInstance.get(url);
+      const response = await this.makeRequest(url);
       const $ = cheerio.load(response.data);
 
       const appInfo = {
@@ -37,7 +100,7 @@ class SteamDBScraper {
   async getDepots(appId) {
     try {
       const url = `${this.baseUrl}/app/${appId}/depots/`;
-      const response = await this.axiosInstance.get(url);
+      const response = await this.makeRequest(url);
       const $ = cheerio.load(response.data);
 
       const depots = [];
@@ -69,7 +132,7 @@ class SteamDBScraper {
   async getManifestHistory(appId, depotId) {
     try {
       const url = `${this.baseUrl}/depot/${depotId}/history/`;
-      const response = await this.axiosInstance.get(url);
+      const response = await this.makeRequest(url);
       const $ = cheerio.load(response.data);
 
       const manifests = [];
@@ -102,7 +165,7 @@ class SteamDBScraper {
   async getPatchNotes(appId) {
     try {
       const url = `${this.baseUrl}/app/${appId}/patchnotes/`;
-      const response = await this.axiosInstance.get(url);
+      const response = await this.makeRequest(url);
       const $ = cheerio.load(response.data);
 
       const patchNotes = [];
@@ -147,7 +210,7 @@ class SteamDBScraper {
   async searchApps(query) {
     try {
       const url = `${this.baseUrl}/search/`;
-      const response = await this.axiosInstance.get(url, {
+      const response = await this.makeRequest(url, {
         params: { a: 'app', q: query }
       });
       const $ = cheerio.load(response.data);

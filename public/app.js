@@ -259,25 +259,40 @@ async function searchSteamDB() {
 }
 
 function displayAppInfo(data) {
-    document.getElementById('appName').textContent = data.name || 'Unknown App';
+    const appName = data.name || 'Unknown App';
+    document.getElementById('appName').innerHTML = `
+        ${appName}
+        <a href="https://steamdb.info/app/${data.appId}/" 
+           target="_blank" 
+           class="btn btn-sm btn-ghost ml-2"
+           title="View on SteamDB">
+            <i class="fas fa-external-link-alt"></i> SteamDB
+        </a>
+        <a href="https://store.steampowered.com/app/${data.appId}/" 
+           target="_blank" 
+           class="btn btn-sm btn-ghost"
+           title="View on Steam Store">
+            <i class="fab fa-steam"></i> Store
+        </a>
+    `;
     
     const content = document.getElementById('appInfoContent');
     content.innerHTML = `
-        <div>
+        <div class="card bg-base-200 p-4">
             <p class="text-sm opacity-70">App ID</p>
-            <p class="font-bold">${data.appId}</p>
+            <p class="font-bold text-lg">${data.appId}</p>
         </div>
-        <div>
+        <div class="card bg-base-200 p-4">
             <p class="text-sm opacity-70">Type</p>
-            <p class="font-bold">${data.type || 'Unknown'}</p>
+            <p class="font-bold text-lg">${data.type || 'Unknown'}</p>
         </div>
-        <div>
+        <div class="card bg-base-200 p-4">
             <p class="text-sm opacity-70">Last Updated</p>
-            <p class="font-bold">${data.lastUpdated || 'Unknown'}</p>
+            <p class="font-bold text-lg">${data.lastUpdated || 'Unknown'}</p>
         </div>
-        <div>
+        <div class="card bg-base-200 p-4">
             <p class="text-sm opacity-70">Developer</p>
-            <p class="font-bold">${data.developer || 'Unknown'}</p>
+            <p class="font-bold text-lg">${data.developer || 'Unknown'}</p>
         </div>
     `;
 }
@@ -299,11 +314,15 @@ function displayDepots(depots) {
     
     // Display depot table
     let html = `
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle"></i>
+            <span>Found ${depots.length} depot(s). Select one below to view its manifest history.</span>
+        </div>
         <table class="table table-zebra w-full">
             <thead>
                 <tr>
                     <th>Depot ID</th>
-                    <th>Name</th>
+                    <th>Name / Description</th>
                     <th>Size</th>
                     <th>Last Update</th>
                     <th>Actions</th>
@@ -314,15 +333,36 @@ function displayDepots(depots) {
     
     depots.forEach(depot => {
         html += `
-            <tr>
-                <td><code>${depot.depotId}</code></td>
-                <td>${depot.name || 'Unknown'}</td>
-                <td>${depot.size || 'N/A'}</td>
-                <td>${depot.lastUpdate || 'N/A'}</td>
+            <tr class="hover:bg-base-300">
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="quickDownloadDepot(${depot.depotId})">
-                        <i class="fas fa-download"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <code class="bg-base-200 px-2 py-1 rounded">${depot.depotId}</code>
+                        <a href="https://steamdb.info/depot/${depot.depotId}/" 
+                           target="_blank" 
+                           class="btn btn-xs btn-ghost"
+                           title="View on SteamDB">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </td>
+                <td>
+                    <span class="font-semibold">${depot.name || 'Unknown'}</span>
+                </td>
+                <td><span class="badge badge-outline">${depot.size || 'N/A'}</span></td>
+                <td><span class="text-sm">${depot.lastUpdate || 'N/A'}</span></td>
+                <td>
+                    <div class="flex gap-2">
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="quickDownloadDepot(${depot.depotId})"
+                                title="Download latest version">
+                            <i class="fas fa-download mr-1"></i>Download
+                        </button>
+                        <button class="btn btn-sm btn-secondary" 
+                                onclick="viewDepotHistory(${depot.depotId})"
+                                title="View build history">
+                            <i class="fas fa-history mr-1"></i>History
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -330,6 +370,13 @@ function displayDepots(depots) {
     
     html += '</tbody></table>';
     listEl.innerHTML = html;
+}
+
+function viewDepotHistory(depotId) {
+    document.getElementById('depotSelect').value = depotId;
+    loadManifestHistory();
+    // Scroll to manifest history section
+    document.getElementById('manifestHistory').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function loadManifestHistory() {
@@ -350,6 +397,7 @@ async function loadManifestHistory() {
 
 function displayManifestHistory(manifests) {
     const historyEl = document.getElementById('manifestHistory');
+    const depotId = document.getElementById('depotSelect').value;
     
     if (!manifests || manifests.length === 0) {
         historyEl.innerHTML = '<p class="text-center text-gray-500 py-4">No manifest history found</p>';
@@ -357,13 +405,17 @@ function displayManifestHistory(manifests) {
     }
     
     let html = `
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle"></i>
+            <span>Showing ${manifests.length} most recent builds. Click download to get a specific version.</span>
+        </div>
         <table class="table table-zebra w-full">
             <thead>
                 <tr>
-                    <th>Date</th>
+                    <th>Release Date</th>
                     <th>Manifest ID</th>
                     <th>Size</th>
-                    <th>Changes</th>
+                    <th>Build Changes / Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -371,16 +423,45 @@ function displayManifestHistory(manifests) {
     `;
     
     manifests.forEach(manifest => {
+        const changeDesc = manifest.changes || 'No description available';
+        const hasChanges = changeDesc !== 'No description available' && changeDesc !== 'No description';
+        const changeClass = hasChanges ? 'text-success' : 'opacity-50';
+        
         html += `
-            <tr class="manifest-item">
-                <td>${manifest.date || 'Unknown'}</td>
-                <td><code class="text-xs">${manifest.manifestId}</code></td>
-                <td>${manifest.size || 'N/A'}</td>
-                <td class="max-w-md truncate">${manifest.changes || 'No description'}</td>
+            <tr class="manifest-item hover:bg-base-300">
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="downloadManifest('${manifest.manifestId}')">
-                        <i class="fas fa-download"></i>
-                    </button>
+                    <div class="flex flex-col">
+                        <span class="font-semibold">${manifest.date || 'Unknown'}</span>
+                    </div>
+                </td>
+                <td>
+                    <code class="text-xs bg-base-200 px-2 py-1 rounded">${manifest.manifestId}</code>
+                    <a href="https://steamdb.info/depot/${depotId}/history/?changeid=M:${manifest.manifestId}" 
+                       target="_blank" 
+                       class="btn btn-xs btn-ghost ml-2"
+                       title="View on SteamDB">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </td>
+                <td><span class="badge badge-outline">${manifest.size || 'N/A'}</span></td>
+                <td>
+                    <div class="max-w-md">
+                        <p class="${changeClass} text-sm">${changeDesc}</p>
+                    </div>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="downloadManifest('${manifest.manifestId}')" 
+                                title="Download this build">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn btn-sm btn-ghost" 
+                                onclick="copyManifestId('${manifest.manifestId}')" 
+                                title="Copy Manifest ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -427,7 +508,15 @@ function downloadManifest(manifestId) {
     document.getElementById('downloadDepotId').value = depotId;
     document.getElementById('downloadManifestId').value = manifestId;
     showPage('downloader');
-    showToast('Manifest info filled in downloader', 'success');
+    showToast('Manifest info filled! Ready to download specific build version.', 'success');
+}
+
+function copyManifestId(manifestId) {
+    navigator.clipboard.writeText(manifestId).then(() => {
+        showToast('Manifest ID copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Failed to copy to clipboard', 'error');
+    });
 }
 
 // History
