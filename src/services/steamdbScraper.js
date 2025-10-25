@@ -1,5 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const SteamAPI = require('./steamAPI');
 
 class SteamDBScraper {
   constructor() {
@@ -7,9 +8,11 @@ class SteamDBScraper {
     this.requestQueue = [];
     this.isProcessing = false;
     this.lastRequestTime = 0;
-    this.minRequestInterval = 2000; // 2 seconds between requests
-    this.requestsPerMinute = 20;
+    this.minRequestInterval = 3000; // 3 seconds between requests (increased)
+    this.requestsPerMinute = 15; // Reduced to 15 to be safer
     this.requestTimestamps = [];
+    this.steamAPI = new SteamAPI();
+    this.useFallback = false; // Use Steam API fallback if SteamDB fails
     
     this.axiosInstance = axios.create({
       headers: {
@@ -59,15 +62,20 @@ class SteamDBScraper {
   async makeRequest(url, options = {}) {
     await this.throttleRequest();
     
+    // Add random delay to appear more human
+    const randomDelay = Math.floor(Math.random() * 1000) + 500; // 500-1500ms
+    await new Promise(resolve => setTimeout(resolve, randomDelay));
+    
     try {
       const response = await this.axiosInstance.get(url, options);
       return response;
     } catch (error) {
       if (error.response) {
         if (error.response.status === 403) {
-          throw new Error('Access denied by SteamDB. Please wait a few minutes before trying again.');
+          this.useFallback = true; // Enable fallback for future requests
+          throw new Error('SteamDB blocked the request. Using Steam API fallback instead.');
         } else if (error.response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait before making more requests.');
+          throw new Error('Rate limit exceeded. Please wait 60 seconds before trying again.');
         }
       }
       throw error;
@@ -75,6 +83,26 @@ class SteamDBScraper {
   }
 
   async getAppInfo(appId) {
+    // Try Steam API first if fallback is enabled or if we've had recent failures
+    if (this.useFallback) {
+      console.log('Using Steam API fallback for app info');
+      const steamResult = await this.steamAPI.getAppDetails(appId);
+      if (steamResult.success) {
+        return {
+          success: true,
+          data: {
+            appId: appId,
+            name: steamResult.data.name,
+            type: steamResult.data.type,
+            developer: steamResult.data.developer,
+            publisher: steamResult.data.publisher,
+            lastUpdated: steamResult.data.releaseDate,
+            fallback: true
+          }
+        };
+      }
+    }
+
     try {
       const url = `${this.baseUrl}/app/${appId}/`;
       const response = await this.makeRequest(url);
@@ -90,10 +118,32 @@ class SteamDBScraper {
                       $('td:contains("Last Update")').next().text().trim()
       };
 
+      this.useFallback = false; // Reset fallback flag on success
       return { success: true, data: appInfo };
     } catch (error) {
-      console.error('Error fetching app info:', error.message);
-      return { success: false, error: error.message };
+      console.error('Error fetching app info from SteamDB:', error.message);
+      
+      // Try Steam API as fallback
+      console.log('Attempting Steam API fallback...');
+      this.useFallback = true;
+      const steamResult = await this.steamAPI.getAppDetails(appId);
+      if (steamResult.success) {
+        return {
+          success: true,
+          data: {
+            appId: appId,
+            name: steamResult.data.name,
+            type: steamResult.data.type,
+            developer: steamResult.data.developer,
+            publisher: steamResult.data.publisher,
+            lastUpdated: steamResult.data.releaseDate,
+            fallback: true,
+            fallbackMessage: 'Data from Steam Store (SteamDB unavailable)'
+          }
+        };
+      }
+      
+      return { success: false, error: 'Unable to fetch app info from SteamDB or Steam API. Try again later or use manual entry.' };
     }
   }
 
@@ -125,7 +175,11 @@ class SteamDBScraper {
       return { success: true, data: depots };
     } catch (error) {
       console.error('Error fetching depots:', error.message);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: 'Unable to load depots from SteamDB. You can still download by entering Depot ID manually.',
+        fallbackInstructions: 'Find depot IDs at: https://steamdb.info/app/' + appId + '/depots/'
+      };
     }
   }
 

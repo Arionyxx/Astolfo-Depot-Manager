@@ -232,14 +232,20 @@ async function searchSteamDB() {
     
     currentAppId = parseInt(appId);
     
-    showToast('Loading app information...', 'info');
+    showToast('Loading app information... Please wait, this may take a few seconds.', 'info');
     
     // Load app info
     const appInfo = await window.api.steamdb.getAppInfo(appId);
     if (appInfo.success) {
         displayAppInfo(appInfo.data);
+        if (appInfo.data.fallback) {
+            showToast('Using Steam Store data (SteamDB temporarily unavailable)', 'warning');
+        }
     } else {
         showToast('Failed to load app info: ' + appInfo.error, 'error');
+        // Still allow manual depot entry
+        document.getElementById('appInfoSection').classList.remove('hidden');
+        displayFallbackInfo(appId, appInfo.error);
         return;
     }
     
@@ -247,6 +253,9 @@ async function searchSteamDB() {
     const depots = await window.api.steamdb.getDepots(appId);
     if (depots.success) {
         displayDepots(depots.data);
+    } else {
+        showToast('Depots unavailable: ' + depots.error, 'warning');
+        displayDepotsError(appId, depots.error, depots.fallbackInstructions);
     }
     
     // Load patch notes
@@ -258,10 +267,46 @@ async function searchSteamDB() {
     document.getElementById('appInfoSection').classList.remove('hidden');
 }
 
+function displayFallbackInfo(appId, errorMsg) {
+    const content = document.getElementById('appInfoContent');
+    content.innerHTML = `
+        <div class="col-span-2">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <h3 class="font-bold">SteamDB Temporarily Unavailable</h3>
+                    <p class="text-sm">Don't worry! You can still download depots manually:</p>
+                    <ol class="text-sm mt-2 ml-4 list-decimal">
+                        <li>Visit <a href="https://steamdb.info/app/${appId}/depots/" target="_blank" class="link">this SteamDB page</a> in your browser</li>
+                        <li>Find the Depot ID you want</li>
+                        <li>Go to "Depot Downloader" tab and enter the IDs manually</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function displayDepotsError(appId, errorMsg, instructions) {
+    const listEl = document.getElementById('depotsList');
+    listEl.innerHTML = `
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <h3 class="font-bold">Depot List Unavailable</h3>
+                <p class="text-sm">${errorMsg}</p>
+                ${instructions ? `<p class="text-sm mt-2"><a href="${instructions.replace('Find depot IDs at: ', '')}" target="_blank" class="link">Open SteamDB in browser →</a></p>` : ''}
+                <p class="text-sm mt-2">You can still use the <strong>Depot Downloader</strong> tab by entering App ID and Depot ID manually.</p>
+            </div>
+        </div>
+    `;
+}
+
 function displayAppInfo(data) {
     const appName = data.name || 'Unknown App';
+    const fallbackBadge = data.fallback ? '<span class="badge badge-warning ml-2">Steam API</span>' : '';
     document.getElementById('appName').innerHTML = `
-        ${appName}
+        ${appName} ${fallbackBadge}
         <a href="https://steamdb.info/app/${data.appId}/" 
            target="_blank" 
            class="btn btn-sm btn-ghost ml-2"
@@ -277,7 +322,17 @@ function displayAppInfo(data) {
     `;
     
     const content = document.getElementById('appInfoContent');
+    const fallbackWarning = data.fallback ? `
+        <div class="col-span-2">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span>Showing data from Steam Store API. Some features like depot history may be limited.</span>
+            </div>
+        </div>
+    ` : '';
+    
     content.innerHTML = `
+        ${fallbackWarning}
         <div class="card bg-base-200 p-4">
             <p class="text-sm opacity-70">App ID</p>
             <p class="font-bold text-lg">${data.appId}</p>
