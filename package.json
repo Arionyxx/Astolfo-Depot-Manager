@@ -28,7 +28,7 @@
     "steamcommunity": "^3.47.0"
   },
   "devDependencies": {
-    "electron": "^27.1.0",
+    "electron": "^38.4.0",
     "electron-builder": "^24.9.1"
   },
   "build": {
