@@ -1,10 +1,9 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const SteamAPI = require('./steamAPI');
-const BrowserSession = require('./browserSession');
 
 class SteamDBScraper {
-  constructor() {
+  constructor(customUserAgent = null) {
     this.baseUrl = 'https://steamdb.info';
     this.requestQueue = [];
     this.isProcessing = false;
@@ -14,11 +13,11 @@ class SteamDBScraper {
     this.requestTimestamps = [];
     this.steamAPI = new SteamAPI();
     this.useFallback = false; // Use Steam API fallback if SteamDB fails
-    this.browserSession = new BrowserSession();
+    this.customUserAgent = customUserAgent;
     
     this.axiosInstance = axios.create({
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': customUserAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -32,6 +31,11 @@ class SteamDBScraper {
       },
       timeout: 15000
     });
+  }
+
+  setUserAgent(userAgent) {
+    this.customUserAgent = userAgent;
+    this.axiosInstance.defaults.headers['User-Agent'] = userAgent;
   }
 
   async throttleRequest() {
@@ -68,40 +72,19 @@ class SteamDBScraper {
     const randomDelay = Math.floor(Math.random() * 1000) + 500; // 500-1500ms
     await new Promise(resolve => setTimeout(resolve, randomDelay));
     
-    // Use browser session cookies if available
-    if (this.browserSession.hasValidSession()) {
-      const sessionConfig = this.browserSession.getAxiosConfig();
-      options.headers = { ...options.headers, ...sessionConfig.headers };
-    }
-    
     try {
       const response = await this.axiosInstance.get(url, options);
       return response;
     } catch (error) {
       if (error.response) {
         if (error.response.status === 403) {
-          // Cloudflare blocked - offer to solve it
-          throw new Error('CLOUDFLARE_BLOCK');
+          throw new Error('Access denied. Try using a different user agent in settings.');
         } else if (error.response.status === 429) {
           throw new Error('Rate limit exceeded. Please wait 60 seconds before trying again.');
         }
       }
       throw error;
     }
-  }
-
-  async solveCloudflareCaptcha(url) {
-    try {
-      const result = await this.browserSession.openSteamDBWindow(url);
-      return result;
-    } catch (error) {
-      console.error('Failed to solve Cloudflare:', error.message);
-      return { success: false, error: error.message };
-    }
-  }
-
-  clearSession() {
-    this.browserSession.clearSession();
   }
 
   async getAppInfo(appId) {
