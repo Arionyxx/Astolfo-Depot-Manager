@@ -25,8 +25,7 @@ contextBridge.exposeInMainWorld('api', {
     getDepots: (appId) => ipcRenderer.invoke('steamdb:getDepots', appId),
     getManifestHistory: (appId, depotId) => ipcRenderer.invoke('steamdb:getManifestHistory', appId, depotId),
     getPatchNotes: (appId) => ipcRenderer.invoke('steamdb:getPatchNotes', appId),
-    solveCaptcha: (url) => ipcRenderer.invoke('steamdb:solveCaptcha', url),
-    clearSession: () => ipcRenderer.invoke('steamdb:clearSession')
+    setUserAgent: (userAgent) => ipcRenderer.invoke('steamdb:setUserAgent', userAgent)
   },
 
   // Settings

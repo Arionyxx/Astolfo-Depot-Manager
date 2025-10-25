@@ -55,7 +55,7 @@ app.on('window-all-closed', () => {
 // IPC Handlers
 const steamAuth = new SteamAuth(store);
 const depotDownloader = new DepotDownloader(store);
-const steamdbScraper = new SteamDBScraper();
+let steamdbScraper = new SteamDBScraper(store.get('customUserAgent'));
 
 // Steam Authentication
 ipcMain.handle('steam:login', async (event, credentials) => {
@@ -102,33 +102,14 @@ ipcMain.handle('steamdb:getAppInfo', async (event, appId) => {
   try {
     return await steamdbScraper.getAppInfo(appId);
   } catch (error) {
-    if (error.message === 'CLOUDFLARE_BLOCK') {
-      return { success: false, error: error.message, needsCaptcha: true };
-    }
     return { success: false, error: error.message };
   }
-});
-
-ipcMain.handle('steamdb:solveCaptcha', async (event, url) => {
-  try {
-    return await steamdbScraper.solveCloudflareCaptcha(url);
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('steamdb:clearSession', async () => {
-  steamdbScraper.clearSession();
-  return { success: true };
 });
 
 ipcMain.handle('steamdb:getDepots', async (event, appId) => {
   try {
     return await steamdbScraper.getDepots(appId);
   } catch (error) {
-    if (error.message === 'CLOUDFLARE_BLOCK') {
-      return { success: false, error: error.message, needsCaptcha: true };
-    }
     return { success: false, error: error.message };
   }
 });
@@ -137,9 +118,6 @@ ipcMain.handle('steamdb:getManifestHistory', async (event, appId, depotId) => {
   try {
     return await steamdbScraper.getManifestHistory(appId, depotId);
   } catch (error) {
-    if (error.message === 'CLOUDFLARE_BLOCK') {
-      return { success: false, error: error.message, needsCaptcha: true };
-    }
     return { success: false, error: error.message };
   }
 });
@@ -148,9 +126,15 @@ ipcMain.handle('steamdb:getPatchNotes', async (event, appId) => {
   try {
     return await steamdbScraper.getPatchNotes(appId);
   } catch (error) {
-    if (error.message === 'CLOUDFLARE_BLOCK') {
-      return { success: false, error: error.message, needsCaptcha: true };
-    }
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('steamdb:setUserAgent', async (event, userAgent) => {
+  try {
+    steamdbScraper.setUserAgent(userAgent);
+    return { success: true };
+  } catch (error) {
     return { success: false, error: error.message };
   }
 });
@@ -162,6 +146,10 @@ ipcMain.handle('settings:get', async (event, key) => {
 
 ipcMain.handle('settings:set', async (event, key, value) => {
   store.set(key, value);
+  // Update user agent if changed
+  if (key === 'customUserAgent') {
+    steamdbScraper.setUserAgent(value);
+  }
   return { success: true };
 });
 

@@ -237,13 +237,7 @@
                     
                     <div class="card bg-base-300 shadow-xl mb-6">
                         <div class="card-body">
-                            <div id="steamdbStatusAlert" class="alert alert-error mb-4 hidden">
-                                <i class="fas fa-shield-alt"></i>
-                                <div>
-                                    <span class="font-bold">Cloudflare Protection Detected</span>
-                                    <p class="text-sm">Solve the challenge to access depot lists! <button class="btn btn-xs btn-success ml-2" onclick="solveCloudflareCaptchaQuick()"><i class="fas fa-unlock mr-1"></i>Solve Now</button></p>
-                                </div>
-                            </div>
+                            
                             <div class="flex gap-4">
                                 <input type="number" id="steamdbAppId" placeholder="Enter App ID (e.g., 730)" class="input input-bordered flex-1" />
                                 <button class="btn btn-primary" onclick="searchSteamDB()">
@@ -358,6 +352,36 @@
                                 <button class="btn btn-primary" onclick="saveSettings()">
                                     <i class="fas fa-save mr-2"></i>Save Settings
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-300 shadow-xl mb-6">
+                        <div class="card-body">
+                            <h2 class="card-title">SteamDB Settings</h2>
+                            
+                            <div class="form-control w-full">
+                                <label class="label">
+                                    <span class="label-text">Custom User Agent</span>
+                                    <span class="label-text-alt">Leave empty for default</span>
+                                </label>
+                                <textarea id="settingsUserAgent" class="textarea textarea-bordered h-24" placeholder="Example: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36..."></textarea>
+                                <label class="label">
+                                    <span class="label-text-alt">Use a browser user agent to bypass restrictions</span>
+                                </label>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <h3 class="font-bold">How to get a User Agent:</h3>
+                                    <ol class="text-sm list-decimal ml-4 mt-1">
+                                        <li>Open your browser (Chrome, Firefox, etc.)</li>
+                                        <li>Visit <a href="https://www.whatismybrowser.com/detect/what-is-my-user-agent/" target="_blank" class="link">whatismybrowser.com</a></li>
+                                        <li>Copy the User Agent string shown</li>
+                                        <li>Paste it here and save</li>
+                                    </ol>
+                                </div>
                             </div>
                         </div>
                     </div>

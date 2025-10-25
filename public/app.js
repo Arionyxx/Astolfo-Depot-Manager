@@ -237,23 +237,14 @@ async function searchSteamDB() {
     // Load app info
     const appInfo = await window.api.steamdb.getAppInfo(appId);
     
-    // Check if Cloudflare challenge is needed
-    if (appInfo.needsCaptcha) {
-        showCloudflareChallengePrompt(appId);
-        return;
-    }
     
     if (appInfo.success) {
         displayAppInfo(appInfo.data);
         if (appInfo.data.fallback) {
             showToast('Using Steam Store data (SteamDB temporarily unavailable)', 'warning');
-            document.getElementById('steamdbStatusAlert').classList.remove('hidden');
-        } else {
-            document.getElementById('steamdbStatusAlert').classList.add('hidden');
         }
     } else {
         showToast('Failed to load app info: ' + appInfo.error, 'error');
-        document.getElementById('steamdbStatusAlert').classList.remove('hidden');
         // Still allow manual depot entry
         document.getElementById('appInfoSection').classList.remove('hidden');
         displayFallbackInfo(appId, appInfo.error);
@@ -263,18 +254,12 @@ async function searchSteamDB() {
     // Load depots
     const depots = await window.api.steamdb.getDepots(appId);
     
-    // Check if depots also need Cloudflare challenge
-    if (depots.needsCaptcha) {
-        // Show challenge prompt if depots are blocked too
-        showCloudflareChallengePrompt(appId);
-        return;
-    }
     
     if (depots.success) {
         displayDepots(depots.data);
     } else {
         showToast('Depots unavailable: ' + depots.error, 'warning');
-        displayDepotsErrorWithSolver(appId, depots.error, depots.fallbackInstructions);
+        displayDepotsError(appId, depots.error, depots.fallbackInstructions);
     }
     
     // Load patch notes (don't block on this)
@@ -282,8 +267,7 @@ async function searchSteamDB() {
         const patchNotes = await window.api.steamdb.getPatchNotes(appId);
         if (patchNotes.success) {
             displayPatchNotes(patchNotes.data);
-        } else if (!patchNotes.needsCaptcha) {
-            // Only show error if it's not a Cloudflare issue (already shown)
+        } else {
             displayPatchNotes([]);
         }
     } catch (error) {
@@ -294,118 +278,7 @@ async function searchSteamDB() {
     document.getElementById('appInfoSection').classList.remove('hidden');
 }
 
-async function showCloudflareChallengePrompt(appId) {
-    const content = document.getElementById('appInfoContent');
-    const appInfoSection = document.getElementById('appInfoSection');
-    
-    appInfoSection.classList.remove('hidden');
-    document.getElementById('appName').textContent = 'Cloudflare Challenge Required';
-    
-    content.innerHTML = `
-        <div class="col-span-2">
-            <div class="card bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                <div class="card-body">
-                    <h2 class="card-title text-2xl">
-                        <i class="fas fa-shield-alt mr-2"></i>
-                        Cloudflare Protection Detected
-                    </h2>
-                    <p class="text-lg mt-2">SteamDB uses Cloudflare to protect against bots. Let's solve the challenge!</p>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="space-y-4">
-                        <div class="alert bg-white/20">
-                            <i class="fas fa-info-circle"></i>
-                            <div>
-                                <h3 class="font-bold">What will happen:</h3>
-                                <ol class="text-sm list-decimal ml-6 mt-2">
-                                    <li>A browser window will open with SteamDB</li>
-                                    <li>Complete the Cloudflare challenge if shown (click checkbox)</li>
-                                    <li>Window closes automatically when done</li>
-                                    <li>Then you can browse SteamDB normally!</li>
-                                </ol>
-                            </div>
-                        </div>
-                        
-                        <button class="btn btn-lg btn-success w-full" onclick="solveCloudflareCaptcha(${appId})">
-                            <i class="fas fa-unlock mr-2"></i>
-                            Open Browser & Solve Challenge
-                        </button>
-                        
-                        <p class="text-sm text-center opacity-80">
-                            <i class="fas fa-lock"></i>
-                            This is safe and normal - just Cloudflare's security check
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
-async function solveCloudflareCaptcha(appId) {
-    showToast('Opening browser window... Please solve the Cloudflare challenge.', 'info');
-    
-    try {
-        const result = await window.api.steamdb.solveCaptcha('https://steamdb.info/app/' + appId);
-        
-        if (result.success) {
-            showToast('✅ Challenge solved! Now loading data...', 'success');
-            // Retry the search now that we have a valid session
-            document.getElementById('steamdbAppId').value = appId;
-            setTimeout(() => searchSteamDB(), 1000);
-        } else {
-            showToast('Failed to solve challenge: ' + result.error, 'error');
-            showCloudflareChallengePrompt(appId);
-        }
-    } catch (error) {
-        showToast('Error: ' + error.message, 'error');
-    }
-}
-
-// Quick solver from alert banner
-async function solveCloudflareCaptchaQuick() {
-    const appId = document.getElementById('steamdbAppId').value || currentAppId;
-    if (!appId) {
-        showToast('Please enter an App ID first', 'error');
-        return;
-    }
-    await solveCloudflareCaptcha(appId);
-}
-
-function showTroubleshootingHelp() {
-    const helpText = `
-=== TROUBLESHOOTING: SteamDB Unavailable ===
-
-Don't worry! You can still download depots:
-
-1. SOLVE CLOUDFLARE (NEW!):
-   - Click the "Solve Challenge" button
-   - Complete Cloudflare check in the browser
-   - Automatically continue!
-
-2. MANUAL ENTRY:
-   - Go to "Depot Downloader" tab
-   - Find App ID and Depot ID from browser
-   - Enter them manually
-   - Click "Start Download"
-
-3. BROWSER METHOD:
-   - Open: https://steamdb.info in your browser
-   - Search for your game
-   - Copy the Depot IDs you need
-   - Use them in Depot Downloader tab
-
-WHY THIS HAPPENS:
-SteamDB uses Cloudflare protection that can block
-automated requests. The app now lets you solve
-the challenge directly!
-
-Full guide: Check TROUBLESHOOTING.md in the app folder
-    `;
-    
-    alert(helpText);
-}
 
 function displayFallbackInfo(appId, errorMsg) {
     const content = document.getElementById('appInfoContent');
@@ -436,53 +309,7 @@ function displayDepotsError(appId, errorMsg, instructions) {
                 <h3 class="font-bold">Depot List Unavailable</h3>
                 <p class="text-sm">${errorMsg}</p>
                 ${instructions ? `<p class="text-sm mt-2"><a href="${instructions.replace('Find depot IDs at: ', '')}" target="_blank" class="link">Open SteamDB in browser →</a></p>` : ''}
-                <p class="text-sm mt-2">You can still use the <strong>Depot Downloader</strong> tab by entering App ID and Depot ID manually.</p>
-            </div>
-        </div>
-    `;
-}
-
-function displayDepotsErrorWithSolver(appId, errorMsg, instructions) {
-    const listEl = document.getElementById('depotsList');
-    listEl.innerHTML = `
-        <div class="card bg-gradient-to-r from-orange-500 to-red-500 text-white">
-            <div class="card-body">
-                <h3 class="card-title">
-                    <i class="fas fa-shield-alt mr-2"></i>
-                    Cloudflare Blocked Depot List
-                </h3>
-                <p class="text-sm">${errorMsg}</p>
-                
-                <div class="divider"></div>
-                
-                <div class="space-y-3">
-                    <div class="alert bg-white/20">
-                        <i class="fas fa-info-circle"></i>
-                        <div>
-                            <p class="text-sm font-bold">Solution: Solve Cloudflare Challenge!</p>
-                            <p class="text-xs mt-1">Click below to open browser, complete the challenge, then see all depots!</p>
-                        </div>
-                    </div>
-                    
-                    <button class="btn btn-success btn-lg w-full" onclick="solveCloudflareCaptcha(${appId})">
-                        <i class="fas fa-unlock mr-2"></i>
-                        Solve Challenge & Load Depots
-                    </button>
-                    
-                    <details class="collapse collapse-arrow bg-white/10">
-                        <summary class="collapse-title text-sm font-medium">
-                            Or use manual entry instead
-                        </summary>
-                        <div class="collapse-content text-sm">
-                            <ol class="list-decimal ml-4 space-y-1">
-                                <li>Open <a href="https://steamdb.info/app/${appId}/depots/" target="_blank" class="link underline">SteamDB</a> in your browser</li>
-                                <li>Complete Cloudflare challenge there</li>
-                                <li>Find the Depot ID you want</li>
-                                <li>Use "Depot Downloader" tab to enter it manually</li>
-                            </ol>
-                        </div>
-                    </details>
-                </div>
+                <p class="text-sm mt-2">Try changing the user agent in Settings or use the <strong>Depot Downloader</strong> tab by entering App ID and Depot ID manually.</p>
             </div>
         </div>
     `;
@@ -814,6 +641,7 @@ async function loadSettings() {
     document.getElementById('settingsMaxDownloads').value = settings.maxDownloads || 3;
     document.getElementById('settingsAutoVerify').checked = settings.autoVerify || false;
     document.getElementById('settingsRememberLogin').checked = settings.rememberLogin || false;
+    document.getElementById('settingsUserAgent').value = settings.customUserAgent || '';
 }
 
 async function saveSettings() {
@@ -821,15 +649,22 @@ async function saveSettings() {
         downloadDir: document.getElementById('settingsDownloadDir').value,
         maxDownloads: parseInt(document.getElementById('settingsMaxDownloads').value),
         autoVerify: document.getElementById('settingsAutoVerify').checked,
-        rememberLogin: document.getElementById('settingsRememberLogin').checked
+        rememberLogin: document.getElementById('settingsRememberLogin').checked,
+        customUserAgent: document.getElementById('settingsUserAgent').value
     };
     
     await window.api.settings.set('downloadDir', settings.downloadDir);
     await window.api.settings.set('maxDownloads', settings.maxDownloads);
     await window.api.settings.set('autoVerify', settings.autoVerify);
     await window.api.settings.set('rememberLogin', settings.rememberLogin);
+    await window.api.settings.set('customUserAgent', settings.customUserAgent);
     
-    showToast('Settings saved successfully', 'success');
+    if (settings.customUserAgent) {
+        await window.api.steamdb.setUserAgent(settings.customUserAgent);
+        showToast('Settings saved! Custom user agent applied.', 'success');
+    } else {
+        showToast('Settings saved successfully', 'success');
+    }
 }
 
 // Dashboard Stats
