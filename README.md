@@ -11,6 +11,8 @@
 
 A modern, feature-rich alternative to DepotDownloader GUI with real-time SteamDB data integration, beautiful UI powered by daisyUI, and comprehensive Steam authentication support.
 
+🆕 **NEW: Built-in Cloudflare Challenge Solver!** Solve Cloudflare challenges in-app to browse SteamDB depot lists directly!
+
 [Features](#features) • [Installation](#installation) • [Quick Update](#-updating-easy-way) • [Usage](#usage) • [Documentation](#-documentation)
 
 </div>
@@ -40,6 +42,7 @@ A modern, feature-rich alternative to DepotDownloader GUI with real-time SteamDB
 - **Download History** - Track all your previous downloads
 
 ### 🗄️ SteamDB Integration
+- **🆕 Cloudflare Challenge Solver** - Solve captchas in-app to access SteamDB!
 - **App Information** - View detailed app info from SteamDB
 - **Depot Browser** - Browse all available depots for any game
 - **Manifest History** - View complete manifest history with dates
@@ -319,9 +322,11 @@ This tool is for educational and backup purposes only. Users are responsible for
 
 ## 📚 Documentation
 
+- **🆕 [CLOUDFLARE_GUIDE.md](CLOUDFLARE_GUIDE.md)** - How to use the Cloudflare challenge solver
 - **[QUICK_START.md](QUICK_START.md)** - Complete beginner's guide
 - **[UPDATE_GUIDE.md](UPDATE_GUIDE.md)** - How to update without redownloading
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Fix 403 errors and common issues
+- **[MANUAL_DOWNLOAD_GUIDE.md](MANUAL_DOWNLOAD_GUIDE.md)** - Manual download instructions
 - **[FIXES.md](FIXES.md)** - Recent bug fixes and improvements
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute
