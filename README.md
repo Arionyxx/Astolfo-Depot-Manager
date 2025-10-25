@@ -11,7 +11,7 @@
 
 A modern, feature-rich alternative to DepotDownloader GUI with real-time SteamDB data integration, beautiful UI powered by daisyUI, and comprehensive Steam authentication support.
 
-🆕 **NEW: Built-in Cloudflare Challenge Solver!** Solve Cloudflare challenges in-app to browse SteamDB depot lists directly!
+🆕 **NEW: Custom User Agent Support!** Configure your own user agent to bypass SteamDB restrictions!
 
 [Features](#features) • [Installation](#installation) • [Quick Update](#-updating-easy-way) • [Usage](#usage) • [Documentation](#-documentation)
 
@@ -42,7 +42,7 @@ A modern, feature-rich alternative to DepotDownloader GUI with real-time SteamDB
 - **Download History** - Track all your previous downloads
 
 ### 🗄️ SteamDB Integration
-- **🆕 Cloudflare Challenge Solver** - Solve captchas in-app to access SteamDB!
+- **🆕 Custom User Agent** - Configure your own browser user agent to bypass restrictions
 - **App Information** - View detailed app info from SteamDB
 - **Depot Browser** - Browse all available depots for any game
 - **Manifest History** - View complete manifest history with dates
@@ -322,7 +322,7 @@ This tool is for educational and backup purposes only. Users are responsible for
 
 ## 📚 Documentation
 
-- **🆕 [CLOUDFLARE_GUIDE.md](CLOUDFLARE_GUIDE.md)** - How to use the Cloudflare challenge solver
+- **🆕 [USER_AGENT_GUIDE.md](USER_AGENT_GUIDE.md)** - How to configure custom user agent to bypass restrictions
 - **[QUICK_START.md](QUICK_START.md)** - Complete beginner's guide
 - **[UPDATE_GUIDE.md](UPDATE_GUIDE.md)** - How to update without redownloading
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Fix 403 errors and common issues

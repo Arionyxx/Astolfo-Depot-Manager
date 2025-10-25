@@ -17,7 +17,28 @@ SteamDB uses Cloudflare protection which can block automated requests, especiall
 
 **Solutions:**
 
-#### Solution 1: Use Steam API Fallback (Automatic) ✅
+#### Solution 1: Configure Custom User Agent (Recommended) ✅
+
+The easiest and most effective solution:
+
+1. **Go to Settings page** in the app
+2. **Scroll to "SteamDB Settings"**
+3. **Get your browser's user agent:**
+   - Visit: https://www.whatismybrowser.com/detect/what-is-my-user-agent/
+   - Copy the user agent string shown
+   - Or open browser DevTools (F12) → Console → type `navigator.userAgent`
+4. **Paste it in the textarea**
+5. **Click "Save Settings"**
+6. **Try searching again** - Should work now! ✅
+
+**Why this works:**
+- Your browser has a trusted user agent
+- Cloudflare recognizes it as legitimate
+- Requests go through normally
+
+📖 **Full guide:** See [USER_AGENT_GUIDE.md](USER_AGENT_GUIDE.md) for detailed instructions
+
+#### Solution 2: Use Steam API Fallback (Automatic) ✅
 The app now automatically falls back to Steam's official API when SteamDB is blocked:
 
 1. **Try searching for an app** - The app will automatically:
@@ -37,7 +58,7 @@ The app now automatically falls back to Steam's official API when SteamDB is blo
    - ✅ Basic app info available
    - ✅ Can still download by manual entry!
 
-#### Solution 2: Manual Depot Entry (Always Works) ✅
+#### Solution 3: Manual Depot Entry (Always Works) ✅
 
 Even if SteamDB is completely blocked, you can still download:
 
@@ -55,7 +76,7 @@ Even if SteamDB is completely blocked, you can still download:
 
 3. **Everything still works!** ✅
 
-#### Solution 3: Wait and Retry
+#### Solution 4: Wait and Retry
 Sometimes Cloudflare's protection is temporary:
 
 1. **Wait 5-10 minutes**
@@ -67,7 +88,7 @@ The app now has better rate limiting:
 - Maximum 15 requests per minute (reduced from 20)
 - Random delays to appear more human
 
-#### Solution 4: Use Different Network
+#### Solution 5: Use Different Network
 If your IP is temporarily blocked:
 
 1. **Change networks:**
@@ -77,7 +98,7 @@ If your IP is temporarily blocked:
 
 2. **Try again** - Should work on different IP
 
-#### Solution 5: Browser Method
+#### Solution 6: Browser Method
 Use SteamDB in your browser alongside the app:
 
 1. **Open browser:** https://steamdb.info/
